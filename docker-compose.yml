@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:9.6.2-alpine
+    ports:
+      - '5431:5431'
+    volumes:
+      - /var/lib/postgresql/data
+  myapp:
+    depends_on:
+      - postgres
+    # build the current directoroy
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Map the current directory to /var_dashboard in the container
+    volumes:
+      - .:/myapp
+    # localhost:8000
+    ports:
+      - '8000:8000'
+    # We make these adjustments to allow for Bybug, pry, etc., per:
+    # http://stackoverflow.com/questions/35211638/how-to-debug-a-rails-app-in-docker-with-pry
+    links:
+      - postgres
+    tty: true
+    stdin_open: true
+
+  sidekiq:
+    depends_on:
+      - postgres
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sidekiq
+    volumes:
+      - .:/myapp
